@@ -1,0 +1,11 @@
+{
+    "n": [32,64,128,256],
+    "boundary_condition": "Neumann",
+    "restriction_operator": "Full",
+    "interpolation_operator": "Linear",
+    "cycle": "FMG",
+    "maximum_iteration_number": 50,
+    "relative_accuracy": 1e-8,
+    "initial_guess": "null vector"
+}
+

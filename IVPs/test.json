@@ -1,0 +1,9 @@
+{
+    "initial_value": [0.879779227778, 0.0, 0.0, 0.0, -0.379677780949, 0.0],
+    "one_period_time": 19.140540691377,
+    "one_period_step_number": [1500],
+    "method": "Dormand_Prince_embedded_RK",
+    "order": 5,
+    "if_Richardson": "no"
+}
+

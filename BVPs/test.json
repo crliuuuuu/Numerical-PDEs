@@ -1,0 +1,7 @@
+{
+    "n": [32,64,128,256],
+    "function_label" : 1,
+    "circle": [0.5,0.5,0],
+    "boundary_condition": 2
+}
+

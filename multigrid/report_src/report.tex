@@ -1,0 +1,1087 @@
+\documentclass{ctexart}
+
+\usepackage{ctex}
+\usepackage{tikz}
+\usetikzlibrary{calc,positioning,shapes.geometric}
+\usepackage{url}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{xcolor}
+\usepackage{color}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{mathrsfs}
+\usepackage{caption}
+\usepackage{subfigure}
+\usepackage{framed}
+\usepackage{booktabs}
+\usepackage{makecell}
+\usepackage{multirow}
+\usepackage{geometry}
+\usepackage{wrapfig}
+\usepackage{abstract}
+\usepackage{algorithmicx}
+\usepackage[ruled]{algorithm}
+\usepackage{algpseudocode}
+\usepackage{setspace}
+\usepackage{booktabs}
+\usepackage{bm}
+\usepackage{cite}
+\usepackage{array}
+
+\usepackage{textcomp}
+\usepackage{listings}
+
+\definecolor{shadecolor}{rgb}{0.93,0.93,0.93}
+\usepackage{geometry}
+\geometry{right=2.5cm,left=2.5cm}
+
+\newtheorem{theorem}{定理}
+
+\pagenumbering{arabic}
+
+\begin{document}
+\begin{sloppypar}
+\title{\vspace{-3cm} \textbf{数值分析项目作业二报告}}
+\author{刘陈若\;$3200104872$\\信息与计算科学2001}
+\date{}
+
+\maketitle
+
+\section{程序编译和运行说明}
+本次项目作业采用Makefile文件对编译进行统一管理。具体地，在Makefile所在目录下输入\verb|make run|
+即可完成编译，得到\verb|test.cpp|的可执行文件\verb|test|以及报告所需要的程序运行结果。
+
+需要说明两点：首先，本项目作业使用eigen3进行线性方程组求解，并使用json file进行参数输入，它们分别以\verb|#include <eigen3/Eigen/...>|和\verb|#include <jsoncpp/json/json.h>|的形式被调用，因此在编译时需要保持相应的文件关系；其次，在使用json file进行参数输入时，部分参数可能需要修改，参数的含义以及具体的修改方式都将在下文中详细给出。
+
+\section{程序运行结果及简要分析}
+
+\subsection{程序测试指南}
+所有的任务都可以通过调整\verb|test.json|和\verb|test.cpp|中的参数得到解决。
+
+\verb|test.cpp|中通过修改\verb|#define DIM|的值为\verb|1|和\verb|2|规定模板类的\verb|int dim|维数参数分别为1和2；修改\verb|#define FUNCTION|的值为\verb|Fun1|至\verb|Fun3|规定测试函数的序号分别为1至3（具体函数表达式将根据一维二维情况后文分开说明）。
+
+\verb|test.json|中各参数的含义说明如下:
+
+$\bullet \;$ \verb|n|：格点等分数。根据题目要求$n=32,64,128,256$，一般无需修改。
+
+$\bullet \;$ \verb|boundary_condition|：边界条件。可以选择输入\verb|"Dirichlet"|，\verb|"Neumann"|和\verb|"Mixed"|分别代表相应的边界条件。
+
+$\bullet \;$ \verb|restriction_operator|：限制算子。可以选择输入\verb|"Full"|和\verb|"Injection"|分别代表full-weighting和injection限制算子。
+
+$\bullet \;$ \verb|interpolation_operator|：插值算子。可以选择输入\verb|"Linear"|和\verb|"Quadratic"|分别代表一次和二次插值算子。
+
+$\bullet \;$ \verb|cycle|：网格类型。可以选择输入\verb|"V"|和\verb|"FMG"|分别代表V-cycle和FMG。
+
+$\bullet \;$ \verb|maximum_iteration_number|：最大迭代次数。当迭代次数大于给定值时，迭代停止。
+
+$\bullet \;$ \verb|relative_accuracy|：解的相对精度。当解的相对精度小于给定值时，迭代停止。
+
+$\bullet \;$ \verb|initial_guess|：解的初始估计。可以输入\verb|"null vector"|代表零向量。
+
+\subsection{结果概述}
+正如您将看到的，这个报告总共有20多页。这是因为避免像上一次项目作业那样因为少报告了一些数据而扣分，这次我将事无巨细地把所有有必要的输出都report在后文。
+
+所以为了避免阅读报告时没有重点，我将在本节中对重要结果进行概述报告，\textbf{如果需要查看具体的数据以及更细致的结果，均可在后文中找到相应的内容}。
+
+$\bullet \;$\textbf{一维情况}：对于每一种边界条件对应的所有$n$，我固定插值和限制算子，根据题目要求设置相对精度，报告每一种情况的residual的一范数的相邻两轮之比（后比前），得到稳定后收敛比率RR（\textbf{具体的参数选取以及每一步的结果展示都在后文有详细说明和展示}）：
+\begin{table}[H]
+\renewcommand{\arraystretch}{1.5}
+\caption{\textbf{RR}}
+\begin{center}
+\begin{tabular}{c|c@{\hspace{0.5cm}}c
+|c@{\hspace{0.5cm}}c|c@{\hspace{0.5cm}}c|c@{\hspace{0.5cm}}c}
+  \hline
+  \multirow{2}{*}{\textbf{boundary}$\backslash$ \textbf{n}} & \multicolumn{2}{c|}{32} & \multicolumn{2}{c|}{64} & \multicolumn{2}{c|}{128} & \multicolumn{2}{c}{256} \\
+  \cline{2-9}
+  & \textbf{V}&\textbf{FMG} & \textbf{V} &\textbf{FMG}& \textbf{V} & \textbf{FMG} &\textbf{V}& \textbf{FMG} \\
+  \hline
+  Dirichlet& 0.029&0.002&0.030 &0.002&0.030 &0.002&0.030 &0.002 \\
+ 
+  Neumann &0.356&0.047 &0.380&0.046 &0.400&0.046 &0.416&0.046 \\
+
+  Mixed &0.207&0.036 &0.213&0.035 &0.218&0.035 &0.223&0.035 \\
+  \hline
+\end{tabular}
+\end{center}
+\end{table}
+从中可以得到FMG的收敛效果比V-cycle好、Neumann边值条件的收敛效果最差、Dirichlet边值条件收敛效果最好、随着$n$增大收敛速率变慢等诸多结论。这些都会在后文进行进一步说明。\textbf{并且后文还将展示RR在同一个$n$中的不同迭代轮次直接总是几乎保持不变的}。
+
+不同边界条件下误差无穷范数关于$n$的平均收敛速率（以2为底）ER展示如下（\textbf{具体的参数选取以及每一步的结果展示都在后文有详细说明和展示}）：
+\begin{table}[H]
+\renewcommand{\arraystretch}{1.5}
+\caption{\textbf{ER}}
+\begin{center}
+\begin{tabular}{c|c@{\hspace{0.5cm}}c}
+  \hline
+  \multirow{2}{*}{\textbf{boundary}} & \multicolumn{2}{c}{ER}  \\
+  \cline{2-3}
+  & \textbf{V}&\textbf{FMG} \\
+  \hline
+  Dirichlet& 2.000&2.000 \\
+ 
+  Neumann & 2.021&2.023 \\\
+
+  Mixed & 2.010&2.010 \\
+  \hline
+\end{tabular}
+\end{center}
+\end{table}
+从中可以得到各边界条件的ER和收敛阶为2、Nuemann边值条件的收敛效果最差、Dirichlet边值条件收敛效果最好等诸多结论。这些都会在后文进行进一步说明。
+
+进一步，通过调节参数$\epsilon$越来越小，得到的V-cycle迭代次数（上限50）和$n$的关系如下所示（\textbf{具体的参数选取以及每一步的结果展示都在后文有详细说明和展示}）：
+\begin{table}[H]
+\renewcommand{\arraystretch}{1.2}
+\caption{\textbf{$\epsilon$ test}}
+\begin{center}
+\begin{tabular}{ccccc}
+  \hline
+  \makebox[0.1\textwidth][c]{$\epsilon$ $\backslash $ \textbf{n}} & \makebox[0.1\textwidth][c]{32} & \makebox[0.1\textwidth][c]{64} & \makebox[0.1\textwidth][c]{128} & \makebox[0.1\textwidth][c]{256} \\
+  \hline
+  $10^{-8}$ & 6& 6& 7& 7 \\
+
+  $10^{-10}$ &7 &7 &8 &8 \\
+
+  $10^{-11}$ &8 &8 &8 &9  \\
+
+  $10^{-12}$ &8 &9 &9 &50  \\
+
+  $8 \times 10^{-13}$ &8 &9 &9 &50  \\
+
+  $6 \times 10^{-13}$ &8 &9 &50 &50  \\
+
+  $4 \times 10^{-13}$ &8 &9 &50 &50  \\
+  
+  $2 \times 10^{-13}$ &9 &50 &50 &50  \\
+
+  $10^{-13}$ &50 &50 &50 &50  \\
+ 
+  $2.2 \times 10^{-16}$ &50 &50 &50 &50 \\
+  \hline
+\end{tabular}
+\end{center}
+\end{table}
+从中可以看出当$\epsilon$在$10^{-12}$到$10^{-13}$之间时，程序从$n=256$开始，依次无法达到给定的精度，具体的critical value与$n$有关。\textbf{程序无法达到精度是因为离散模型存在固有的误差}，例如Jacobi迭代时的精度存在限制，又如插值算子和限制算子作用时会产生误差，导致虽然多重网格能够加快Jacobi迭代的收敛速度，但是也会造成程序达到一定精度后就无法收敛，这些都会在后文进一步说明。
+
+$\bullet \;$\textbf{二维情况}：对于每一种边界条件对应的所有$n$，我固定插值和限制算子，根据题目要求设置相对精度，报告每一种情况的residual的一范数的相邻两轮之比（后比前），得到平均收敛比率RR（\textbf{具体的参数选取以及每一步的结果展示都在后文有详细说明和展示}）：
+\begin{table}[H]
+\renewcommand{\arraystretch}{1.5}
+\caption{\textbf{RR}}
+\begin{center}
+\begin{tabular}{c|c@{\hspace{0.5cm}}c
+|c@{\hspace{0.5cm}}c|c@{\hspace{0.5cm}}c|c@{\hspace{0.5cm}}c}
+  \hline
+  \multirow{2}{*}{\textbf{boundary}$\backslash$ \textbf{n}} & \multicolumn{2}{c|}{32} & \multicolumn{2}{c|}{64} & \multicolumn{2}{c|}{128} & \multicolumn{2}{c}{256} \\
+  \cline{2-9}
+  & \textbf{V}&\textbf{FMG} & \textbf{V} &\textbf{FMG}& \textbf{V} & \textbf{FMG} &\textbf{V}& \textbf{FMG} \\
+  \hline
+  Dirichlet& 0.051&0.002&0.080 &0.002&0.111 &0.002&0.129 &0.013 \\
+ 
+  Neumann &0.601&0.287 &0.668&0.334 &0.721&0.373 &0.763&0.406 \\
+
+  Mixed &0.163&0.029 &0.294&0.040 &0.450&0.047 &0.630&0.053 \\
+  \hline
+\end{tabular}
+\end{center}
+\end{table}
+从中可以得到FMG的收敛效果比V-cycle好、Nuemann边值条件的收敛效果最差、Dirichlet边值条件收敛效果最好、随着$n$增大收敛速率变慢等诸多结论。这些都会在后文进行进一步说明。\textbf{并且后文还将展示RR在同一个$n$中的不同迭代轮次直接总是几乎保持不变的}。
+
+不同边界条件下误差无穷范数关于$n$的平均收敛速率（以2为底）ER展示如下（\textbf{具体的参数选取以及每一步的结果展示都在后文有详细说明和展示}）：
+\begin{table}[H]
+\renewcommand{\arraystretch}{1.5}
+\caption{\textbf{ER}}
+\begin{center}
+\begin{tabular}{c|c@{\hspace{0.5cm}}c}
+  \hline
+  \multirow{2}{*}{\textbf{boundary}} & \multicolumn{2}{c}{ER}  \\
+  \cline{2-3}
+  & \textbf{V}&\textbf{FMG} \\
+  \hline
+  Dirichlet& 1.998&1.998 \\
+ 
+  Nuemann & 1.854&1.824 \\\
+
+  Mixed & 1.991&1.988 \\
+  \hline
+\end{tabular}
+\end{center}
+\end{table}
+从中可以得到各边界条件的ER收敛阶都为2或者趋向于2、Nuemann边值条件的收敛效果最差、Dirichlet边值条件收敛效果最好等诸多结论。这些都会在后文进行进一步说明。
+
+进一步，通过计时器记录二维时不同边界条件程序的运行时间并和相同条件下第七章矩阵LU分解段程序运行时间进行对比，得到下表（\textbf{具体的参数选取以及每一步的结果展示都在后文有详细说明和展示}）：
+\begin{table}[H]
+\renewcommand{\arraystretch}{1.5}
+\caption{\textbf{CPU time}}
+\begin{center}
+\begin{tabular}{c|c@{\hspace{0.5cm}}c
+@{\hspace{0.5cm}}c|c@{\hspace{0.5cm}}c@{\hspace{0.5cm}}c|c@{\hspace{0.5cm}}c@{\hspace{0.5cm}}c|c@{\hspace{0.5cm}}c@{\hspace{0.5cm}}c}
+  \hline
+  \multirow{2}{*}{\textbf{boundary}$\backslash$ \textbf{n}} & \multicolumn{3}{c|}{32} & \multicolumn{3}{c|}{64} & \multicolumn{3}{c|}{128} & \multicolumn{3}{c}{256} \\
+  \cline{2-13}
+  & \textbf{V}&\textbf{FMG} & \textbf{LU} &\textbf{V}& \textbf{FMG} & \textbf{LU} &\textbf{V}& \textbf{FMG} & \textbf{LU} &\textbf{V}& \textbf{FMG} & \textbf{LU} \\
+  \hline
+  Dirichlet& 12&9 &31 &57 &32 &123 &234 &117 &525 &1229 &601 &2164 \\
+ 
+  Nuemann &72 &46 &31 &296 &170 &122 &1306 &702 &526 &5602&2016 &2220 \\
+
+  Mixed &16 &15 &30 &79 &62 &126 &369 &290 &522 &1913 &1490 &2178 \\
+  \hline
+\end{tabular}
+\end{center}
+\end{table}
+从中可以得到FMG运行时间少于V-cycle、除Nuemann边值条件外多重网格的运行时间少于LU分解、LU分解用时相对于多重网格法更稳定等诸多结论。这些都会在后文进行进一步说明。
+
+$\bullet \;$\textbf{附加分(a)}：根据要求，本项目作业统一将\verb|int dim|作为模板参数输入，因此只需要在\verb|test.cpp|中的宏定义中给维数赋值1或2，其便作为模板参数传至头文件等各个子程序，而并非按照函数参数或者其他参数进行输入，从而完成目标。
+
+\subsection{一维结果具体展示}
+
+除特殊说明，在此部分的结果展示中\verb|maximum_iteration_number|均取\verb|50|,\verb|initial_guess|均取零向量，\verb|relative_accuracy|均取\verb|1e-8|，Jacobi迭代的$\nu_1=\nu_2=6$。
+
+我将对三种边界条件、所有的$n$的V-cycle和FMG进行测试。对于插值和限制算子、以及函数的选择，由于种类繁多（具体都可以自己测试程序得到），无法在报告里一一展示。因此为了尽可能完整的展示全部结果，我将对三个函数分别对应三种边界条件，然后对每一种边界条件固定插值和限制算子（二维的时候对应的边界条件取另一种插值和限制算子）。具体结果如下。
+
+\subsubsection{Dirichlet边界条件}
+Dirichlet边界条件中，我们测试函数$y=e^{\sin x}$，插值算子取linear，限制算子取full-weighting。
+
+$\bullet \;$ \textbf{V-cycle}:我们对$n=32,64,128,256$，首先记录每一次V-cycle后\textbf{residual的一范数（第一列）以及对应的reduction速率（第二列）}如下：
+\begin{shaded}
+\begin{verbatim}
+-------------------n = 32-------------------
+Iteration number: 6
+Residual's norm AND relative reduction rate between each cycle: 
+0.0416455
+0.00106545 & 0.026
+2.97628e-05 & 0.028
+8.63816e-07 & 0.029
+2.53908e-08 & 0.029
+7.52578e-10 & 0.03
+-------------------n = 64-------------------
+Iteration number: 6
+Residual's norm AND relative reduction rate between each cycle: 
+0.0854288
+0.00218686 & 0.026
+6.0104e-05 & 0.027
+1.74113e-06 & 0.029
+5.14569e-08 & 0.03
+1.54267e-09 & 0.03
+-------------------n = 128-------------------
+Iteration number: 7
+Residual's norm AND relative reduction rate between each cycle: 
+0.17285
+0.0044603 & 0.026
+0.000123403 & 0.028
+3.59289e-06 & 0.029
+1.06858e-07 & 0.03
+3.21387e-09 & 0.03
+9.75717e-11 & 0.03
+-------------------n = 256-------------------
+Iteration number: 7
+Residual's norm AND relative reduction rate between each cycle: 
+0.347695
+0.00901285 & 0.026
+0.000250805 & 0.028
+7.34082e-06 & 0.029
+2.19713e-07 & 0.03
+6.64755e-09 & 0.03
+2.06683e-10 & 0.031
+\end{verbatim}
+\end{shaded}
+可以看出，Dirichlet边值条件时的V-cycle仅需做$6$至$7$次，稳定后的收敛速率在$0.30$左右。
+
+\textbf{误差无穷范数以及误差关于$n$的收敛速率}如下：
+\begin{shaded}
+\begin{verbatim}
+------------------errornorm report-------------------
+Errornorm of each n: 
+4.94147e-05, 1.23644e-05, 3.09088e-06, 7.7271e-07 
+Relative convergence rate(1og 2) between each n: 
+1.99875, 2.0001, 2.00002
+\end{verbatim} 
+\end{shaded}
+可以看出，V-cycle得到的误差无穷范数收敛阶稳定在$2$左右，从而验证了程序的正确性。
+
+$\bullet \;$ \textbf{FMG}:我们对$n=32,64,128,256$，首先记录每一次FMG后\textbf{residual的一范数（第一列）以及对应的reduction速率（第二列）}如下：
+\begin{shaded}
+\begin{verbatim}
+-------------------n = 32-------------------
+Iteration number: 3
+Residual's norm AND relative reduction rate between each cycle: 
+8.11604e-06
+1.36266e-08 & 0.002
+2.34583e-11 & 0.002
+-------------------n = 64-------------------
+Iteration number: 3
+Residual's norm AND relative reduction rate between each cycle: 
+2.28993e-05
+3.81458e-08 & 0.002
+6.489e-11 & 0.002
+-------------------n = 128-------------------
+Iteration number: 3
+Residual's norm AND relative reduction rate between each cycle: 
+6.47605e-05
+1.07879e-07 & 0.002
+1.83512e-10 & 0.002
+-------------------n = 256-------------------
+Iteration number: 3
+Residual's norm AND relative reduction rate between each cycle: 
+0.000183164
+3.05119e-07 & 0.002
+5.19035e-10 & 0.002
+\end{verbatim}
+\end{shaded}
+可以看出，Dirichlet边值条件时的FMG仅需做$3$次，收敛速率在$0.002$，优于V-cycle。
+
+\textbf{误差无穷范数以及误差关于$n$的收敛速率}如下：
+\begin{shaded}
+\begin{verbatim}
+------------------errornorm report-------------------
+Errornorm of each n: 
+4.94147e-05, 1.23644e-05, 3.09088e-06, 7.72706e-07
+Relative convergence rate(1og 2) between each n: 
+1.99875, 2.0001, 2.00003
+\end{verbatim} 
+\end{shaded}
+可以看出，FMG得到的误差无穷范数收敛阶稳定在$2$左右，从而验证了程序的正确性。
+
+\subsubsection{Neumann边界条件}
+Nuemann边界条件中，我们测试函数$y=\sin x+1$，插值算子取quadratic，限制算子取full-weighting。
+
+$\bullet \;$ \textbf{V-cycle}:我们对$n=32,64,128,256$，首先记录每一次V-cycle后\textbf{residual的一范数（第一列）以及对应的reduction速率（第二列）}如下所示。注意了能在
+报告中不过于冗长地展示，我们仅在此处每五次迭代输出一次结果。
+\begin{shaded}
+\begin{verbatim}
+-------------------n = 32-------------------
+Iteration number: 17
+Residual's norm AND relative reduction rate between each cycle: 
+0.786969
+...
+0.00456647 & 0.357
+...
+2.62755e-05 & 0.356
+...
+1.51134e-07 & 0.356
+5.38672e-08 & 0.356
+-------------------n = 64-------------------
+Iteration number: 18
+Residual's norm AND relative reduction rate between each cycle: 
+1.46341
+...
+0.0113705 & 0.38
+...
+9.0583e-05 & 0.38
+...
+7.21861e-07 & 0.38
+2.74622e-07 & 0.38
+1.04476e-07 & 0.38
+-------------------n = 128-------------------
+Iteration number: 20
+Residual's norm AND relative reduction rate between each cycle: 
+2.7349
+...
+0.0257396 & 0.399
+...
+0.000262948 & 0.4
+...
+2.69356e-06 & 0.4
+...
+6.89836e-08 & 0.4
+-------------------n = 256-------------------
+Iteration number: 21
+Residual's norm AND relative reduction rate between each cycle: 
+5.19614
+...
+0.0550012 & 0.413
+...
+0.000680781 & 0.416
+...
+8.49503e-06 & 0.416
+...
+1.0607e-07 & 0.416
+\end{verbatim}
+\end{shaded}
+可以看出，Neumann边值条件时的V-cycle需做$17$-$21$次，收敛速率在$0.36$-$0.42$左右，且随着$n$的增加收敛速度变慢，\textbf{收敛速度远慢于Dirichlet边值条件}。
+
+\textbf{误差无穷范数以及误差关于$n$的收敛速率}如下：
+\begin{shaded}
+\begin{verbatim}
+------------------errornorm report-------------------
+Errornorm of each n: 
+0.000160018, 3.89544e-05, 9.60907e-06, 2.39573e-06 
+Relative convergence rate(1og 2) between each n: 
+2.03837, 2.01932, 2.00393
+\end{verbatim} 
+\end{shaded}
+可以看出，V-cycle得到的误差无穷范数收敛阶稳定在$2$左右，从而验证了程序的正确性。
+
+$\bullet \;$ \textbf{FMG}:我们对$n=32,64,128,256$，首先记录每一次FMG后\textbf{residual的一范数（第一列）以及对应的reduction速率（第二列）}如下：
+\begin{shaded}
+\begin{verbatim}
+-------------------n = 32-------------------
+Iteration number: 5
+Residual's norm AND relative reduction rate between each cycle: 
+0.00470242
+0.000211701 & 0.045
+1.00657e-05 & 0.048
+4.95859e-07 & 0.049
+2.4963e-08 & 0.05
+-------------------n = 64-------------------
+Iteration number: 5
+Residual's norm AND relative reduction rate between each cycle: 
+0.0159155
+0.000710138 & 0.045
+3.23914e-05 & 0.046
+1.5057e-06 & 0.046
+7.1052e-08 & 0.047
+-------------------n = 128-------------------
+Iteration number: 5
+Residual's norm AND relative reduction rate between each cycle: 
+0.0505508
+0.00229444 & 0.045
+0.000104632 & 0.046
+4.80418e-06 & 0.046
+2.22112e-07 & 0.046
+-------------------n = 256-------------------
+Iteration number: 6
+Residual's norm AND relative reduction rate between each cycle: 
+0.153093
+0.00706378 & 0.046
+0.000324687 & 0.046
+1.49325e-05 & 0.046
+6.88291e-07 & 0.046
+3.1806e-08 & 0.046
+\end{verbatim}
+\end{shaded}
+可以看出，Neumann边值条件时的FMG仅需做$4$-$5$次，收敛速率在$0.045$左右，远好于V-cycle。
+
+\textbf{误差无穷范数以及误差关于$n$的收敛速率}如下：
+\begin{shaded}
+\begin{verbatim}
+------------------errornorm report-------------------
+Errornorm of each n: 
+0.000160036, 3.89307e-05, 9.59817e-06, 2.3833e-06 
+Relative convergence rate(1og 2) between each n: 
+2.03941, 2.02008, 2.0098
+\end{verbatim} 
+\end{shaded}
+可以看出，FMG得到的误差无穷范数收敛阶稳定在$2$左右，从而验证了程序的正确性。
+
+\subsubsection{Mixed边界条件}
+mixed边界条件中，我们测试函数$y=e^{-x}$，插值算子取quadratic，限制算子取injection。
+
+$\bullet \;$ \textbf{V-cycle}:我们对$n=32,64,128,256$，首先记录每一次V-cycle后\textbf{residual的一范数（第一列）以及对应的reduction速率（第二列）}如下：
+\begin{shaded}
+\begin{verbatim}
+-------------------n = 32-------------------
+Iteration number: 11
+Residual's norm AND relative reduction rate between each cycle: 
+0.0228636
+0.00429563 & 0.188
+0.000897703 & 0.209
+0.000187112 & 0.208
+3.86981e-05 & 0.207
+7.99477e-06 & 0.207
+1.65111e-06 & 0.207
+3.40969e-07 & 0.207
+7.04117e-08 & 0.207
+1.45403e-08 & 0.207
+3.00263e-09 & 0.207
+-------------------n = 64-------------------
+Iteration number: 12
+Residual's norm AND relative reduction rate between each cycle: 
+0.0382188
+0.00705338 & 0.185
+0.00153603 & 0.218
+0.000332836 & 0.217
+7.11208e-05 & 0.214
+1.51525e-05 & 0.213
+3.22495e-06 & 0.213
+6.86167e-07 & 0.213
+1.45981e-07 & 0.213
+3.10564e-08 & 0.213
+6.60692e-09 & 0.213
+1.40547e-09 & 0.213
+-------------------n = 128-------------------
+Iteration number: 12
+Residual's norm AND relative reduction rate between each cycle: 
+0.0601565
+0.0104533 & 0.174
+0.00236664 & 0.226
+0.000531214 & 0.224
+0.000116975 & 0.22
+2.56118e-05 & 0.219
+5.59494e-06 & 0.218
+1.22123e-06 & 0.218
+2.66482e-07 & 0.218
+5.81419e-08 & 0.218
+1.26851e-08 & 0.218
+2.76789e-09 & 0.218
+-------------------n = 256-------------------
+Iteration number: 13
+Residual's norm AND relative reduction rate between each cycle: 
+0.0951166
+0.0146579 & 0.154
+0.00342947 & 0.234
+0.000793917 & 0.231
+0.000179864 & 0.227
+4.03751e-05 & 0.224
+9.02581e-06 & 0.224
+2.01431e-06 & 0.223
+4.49223e-07 & 0.223
+1.00155e-07 & 0.223
+2.2326e-08 & 0.223
+4.97651e-09 & 0.223
+1.10907e-09 & 0.223
+\end{verbatim}
+\end{shaded}
+可以看出，Mixed边值条件时的V-cycle需做$11$-$13$次，收敛速率在$0.20$-$0.22$左右，且随着$n$的增加收敛速度变慢，\textbf{收敛速度介于Dirichlet边值条件和Nuemann边值条件之间}。
+
+\textbf{误差无穷范数以及误差关于$n$的收敛速率}如下：
+\begin{shaded}
+\begin{verbatim}
+------------------errornorm report-------------------
+Errornorm of each n: 
+0.000101085, 2.49138e-05, 6.18218e-06, 1.53971e-06 
+Relative convergence rate(1og 2) between each n: 
+2.02055, 2.01075, 2.00546
+\end{verbatim} 
+\end{shaded}
+可以看出，V-cycle得到的误差无穷范数收敛阶稳定在$2$左右，从而验证了程序的正确性。
+
+$\bullet \;$ \textbf{FMG}:我们对$n=32,64,128,256$，首先记录每一次FMG后\textbf{residual的一范数（第一列）以及对应的reduction速率（第二列）}如下：
+\begin{shaded}
+\begin{verbatim}
+-------------------n = 32-------------------
+Iteration number: 5
+Residual's norm AND relative reduction rate between each cycle: 
+0.000246052
+8.77355e-06 & 0.036
+3.12646e-07 & 0.036
+1.11414e-08 & 0.036
+3.9703e-10 & 0.036
+-------------------n = 64-------------------
+Iteration number: 5
+Residual's norm AND relative reduction rate between each cycle: 
+0.00036191
+1.27868e-05 & 0.035
+4.51585e-07 & 0.035
+1.59486e-08 & 0.035
+5.63257e-10 & 0.035
+-------------------n = 128-------------------
+Iteration number: 5
+Residual's norm AND relative reduction rate between each cycle: 
+0.000522027
+1.83593e-05 & 0.035
+6.45502e-07 & 0.035
+2.26957e-08 & 0.035
+7.97978e-10 & 0.035
+-------------------n = 256-------------------
+Iteration number: 5
+Residual's norm AND relative reduction rate between each cycle: 
+0.000745344
+2.61386e-05 & 0.035
+9.16559e-07 & 0.035
+3.21398e-08 & 0.035
+1.127e-09 & 0.035
+\end{verbatim}
+\end{shaded}
+可以看出，Mixed边值条件时的FMG仅需做$5$次，收敛速率在$0.035$左右，远好于V-cycle。
+
+\textbf{误差范数以及误差关于$n$的收敛速率}如下：
+\begin{shaded}
+\begin{verbatim}
+------------------errornorm report-------------------
+Errornorm of each n: 
+0.000101087, 2.49147e-05, 6.18416e-06, 1.54021e-06
+Relative convergence rate(1og 2) between each n: 
+2.02054, 2.01035, 2.00545
+\end{verbatim} 
+\end{shaded}
+可以看出，FMG得到的误差无穷范数收敛阶稳定在$2$左右，从而验证了程序的正确性。
+
+\subsubsection{相对精度测试分析}
+根据题目要求，我们逐渐将相对精度$\epsilon$从$10^{-8}$减小到$2.2 \times 10^{-16}$，以Dirichlet边界条件的V-cycle测试为例，记录下不同$n$在不同$\epsilon$下所需的迭代次数如下：
+\begin{table}[H]
+\renewcommand{\arraystretch}{1.2}
+\caption{\textbf{$\epsilon$ test}}
+\begin{center}
+\begin{tabular}{ccccc}
+  \hline
+  \makebox[0.1\textwidth][c]{$\epsilon$ $\backslash $ \textbf{n}} & \makebox[0.1\textwidth][c]{32} & \makebox[0.1\textwidth][c]{64} & \makebox[0.1\textwidth][c]{128} & \makebox[0.1\textwidth][c]{256} \\
+  \hline
+  $10^{-8}$ & 6& 6& 7& 7 \\
+
+  $10^{-10}$ &7 &7 &8 &8 \\
+
+  $10^{-11}$ &8 &8 &8 &9  \\
+
+  $10^{-12}$ &8 &9 &9 &50  \\
+
+  $8 \times 10^{-13}$ &8 &9 &9 &50  \\
+
+  $6 \times 10^{-13}$ &8 &9 &50 &50  \\
+
+  $4 \times 10^{-13}$ &8 &9 &50 &50  \\
+  
+  $2 \times 10^{-13}$ &9 &50 &50 &50  \\
+
+  $10^{-13}$ &50 &50 &50 &50  \\
+ 
+  $2.2 \times 10^{-16}$ &50 &50 &50 &50 \\
+  \hline
+\end{tabular}
+\end{center}
+\end{table}
+
+从表中可以清晰地看出，当$\epsilon$在$10^{-12}$到$10^{-13}$之间时，程序从$n=256$开始，依次无法达到给定的精度，具体的critical value与$n$有关，大致为$10^{-12}(n=256)$，$6\times10^{-13}(n=128)$，$2\times10^{-13}(n=64)$，$10^{-13}(n=32)$。
+
+为了分析原因所在，首先我们需要明确的是此处的residual指的是解方程的残差，并不是和真实解的误差，因此与真实解无关；其次，通过观察输出，发现\textbf{无法达到精度的原因是当进一步迭代时，得到的residual的reduaction rate接近1}；再者，对FMG作相同的测试，我们发现当$\epsilon$减小到$2.2 \times 10^{-16}$时仍未出现critical calue，程序照常运行，因此原因肯定不完全在Jacobi迭代上。因此我们可以得出结论：\textbf{程序无法达到精度是因为离散模型存在固有的误差，例如Jacobi迭代时的精度存在限制，又如插值算子和限制算子作用时会产生误差，导致虽然多重网格能够加快Jacobi迭代的收敛速度，但是也会造成程序达到一定精度后就无法收敛}。
+
+\subsection{二维结果具体展示}
+
+除特殊说明，在此部分的结果展示中\verb|maximum_iteration_number|均取\verb|50|，\verb|initial_guess|均取零向量，\verb|relative_accuracy|均取\verb|1e-8|，Jacobi迭代的$\nu_1=\nu_2=10$。
+
+我将对三种边界条件、所有的$n$的V-cycle和FMG进行测试。对于插值和限制算子、以及函数的选择，由于种类繁多（具体都可以自己测试程序得到），无法在报告里一一展示。因此为了尽可能完整的展示全部结果，我将对三个函数分别对应三种边界条件，然后对每一种边界条件固定插值和限制算子（与一维时插值和限制算子取不同）。具体结果如下。
+
+\subsubsection{Dirichlet边界条件}
+Dirichlet边界条件中，我们测试函数$y=e^{y+\sin x}$，插值算子取quadratic，限制算子取injection。
+
+$\bullet \;$ \textbf{V-cycle}:我们对$n=32,64,128,256$，首先记录每一次V-cycle后\textbf{residual的一范数（第一列）以及对应的reduction速率（第二列）}如下：
+\begin{shaded}
+\begin{verbatim}
+-------------------n = 32-------------------
+Iteration number: 7
+Residual's norm AND relative reduction rate between each cycle: 
+0.161175
+0.00741034 & 0.046
+0.000365943 & 0.049
+1.8741e-05 & 0.051
+9.80683e-07 & 0.052
+5.20297e-08 & 0.053
+2.78571e-09 & 0.054
+-------------------n = 64-------------------
+Iteration number: 8
+Residual's norm AND relative reduction rate between each cycle: 
+0.588401
+0.0386793 & 0.066
+0.00282332 & 0.073
+0.000217687 & 0.077
+1.73856e-05 & 0.08
+1.4182e-06 & 0.082
+1.17361e-07 & 0.083
+9.80977e-09 & 0.084
+-------------------n = 128-------------------
+Iteration number: 9
+Residual's norm AND relative reduction rate between each cycle: 
+1.67445
+0.139326 & 0.083
+0.0131876 & 0.095
+0.0013505 & 0.102
+0.000145127 & 0.107
+1.60619e-05 & 0.111
+1.81228e-06 & 0.113
+2.07263e-07 & 0.114
+2.39345e-08 & 0.115
+-------------------n = 256-------------------
+Iteration number: 11
+Residual's norm AND relative reduction rate between each cycle: 
+4.16234
+0.408045 & 0.098
+0.0467546 & 0.115
+0.00591583 & 0.127
+0.000794139 & 0.134
+0.000110681 & 0.139
+1.58239e-05 & 0.143
+2.30214e-06 & 0.145
+3.39099e-07 & 0.147
+5.04089e-08 & 0.149
+7.54726e-09 & 0.15
+\end{verbatim}
+\end{shaded}
+可以看出，Dirichlet边值条件时的V-cycle需做$7$-$11$次，收敛速率稳定，且随着$n$增大从$0.05$降低到$0.14$左右，收敛速度相较于一维时变慢。
+
+\textbf{误差无穷范数以及误差关于$n$的收敛速率}如下：
+\begin{shaded}
+\begin{verbatim}
+------------------errornorm report-------------------
+Errornorm of each n: 
+3.44506e-05, 8.62312e-06, 2.15873e-06, 5.39831e-07 
+Relative convergence rate(1og 2) between each n: 
+1.99825, 1.99803, 1.9996
+\end{verbatim} 
+\end{shaded}
+可以看出，V-cycle得到的误差无穷范数收敛阶稳定在$2$左右，从而验证了程序的正确性。
+
+$\bullet \;$ \textbf{FMG}:我们对$n=32,64,128,256$，首先记录每一次FMG后\textbf{residual的一范数（第一列）以及对应的reduction速率（第二列）}如下：
+\begin{shaded}
+\begin{verbatim}
+-------------------n = 32-------------------
+Iteration number: 2
+Residual's norm AND relative reduction rate between each cycle: 
+1.3993e-05
+2.42921e-08 & 0.002
+-------------------n = 64-------------------
+Iteration number: 3
+Residual's norm AND relative reduction rate between each cycle: 
+6.23569e-05
+1.26427e-07 & 0.002
+2.64237e-10 & 0.002
+-------------------n = 128-------------------
+Iteration number: 3
+Residual's norm AND relative reduction rate between each cycle: 
+0.000213358
+4.81218e-07 & 0.002
+1.6386e-09 & 0.003
+-------------------n = 256-------------------
+Iteration number: 4
+Residual's norm AND relative reduction rate between each cycle: 
+0.00365464
+5.68585e-05 & 0.016
+7.62543e-07 & 0.013
+8.35236e-09 & 0.011
+\end{verbatim}
+\end{shaded}
+可以看出，Dirichlet边值条件时的FMG仅需做$2$至$4$次，收敛速率在$0.002$左右（$n=256$时在$0.01$左右），远好于V-cycle，且略逊于一维时的情况。
+
+\textbf{误差无穷范数以及误差关于$n$的收敛速率}如下：
+\begin{shaded}
+\begin{verbatim}
+------------------errornorm report-------------------
+Errornorm of each n: 
+3.44502e-05, 8.62414e-06, 2.15658e-06, 5.39935e-07,
+Relative convergence rate(1og 2) between each n: 
+1.99806, 1.99964, 1.99789
+\end{verbatim} 
+\end{shaded}
+可以看出，FMG得到的误差无穷范数收敛阶稳定在$2$左右，从而验证了程序的正确性。
+
+\subsubsection{Neumann边界条件}
+Neumann边界条件中，我们测试函数$y=\sin (x+y)+1$，插值算子取linear，限制算子取injection。
+
+$\bullet \;$ \textbf{V-cycle}:我们对$n=32,64,128,256$，首先记录每一次V-cycle后\textbf{residual的一范数（第一列）以及对应的reduction速率（第二列）}如下（需要注意的是，\textbf{由于二维纽曼收敛速度很慢，为了能在报告中不过于冗长地展示，我们仅在此处每五次迭代输出一次结果}）：
+\begin{shaded}
+\begin{verbatim}
+-------------------n = 32-------------------
+Iteration number: 27
+Residual's norm AND relative reduction rate between each cycle: 
+0.296139
+...
+0.0232541 & 0.601
+...
+0.00182768 & 0.601
+...
+0.000143649 & 0.601
+...
+1.12902e-05 & 0.601
+...
+8.87366e-07 & 0.601
+-------------------n = 64-------------------
+Iteration number: 34
+Residual's norm AND relative reduction rate between each cycle: 
+0.347453
+...
+0.0458303 & 0.668
+...
+0.00610421 & 0.668
+...
+0.000813031 & 0.668
+...
+0.000108289 & 0.668
+...
+1.44232e-05 & 0.668
+...
+1.92105e-06 & 0.668
+...
+5.73094e-07 & 0.668
+-------------------n = 128-------------------
+Iteration number: 41
+Residual's norm AND relative reduction rate between each cycle: 
+0.385416
+...
+0.0728263 & 0.721
+...
+0.0141863 & 0.721
+...
+0.00276343 & 0.721
+...
+0.000538304 & 0.721
+...
+0.000104859 & 0.721
+...
+2.04262e-05 & 0.721
+...
+3.97893e-06 & 0.721
+...
+7.7508e-07 & 0.721
+-------------------n = 256-------------------
+Iteration number: 48
+Residual's norm AND relative reduction rate between each cycle: 
+0.418354
+...
+0.101296 & 0.763
+...
+0.0261751 & 0.763
+...
+0.00676368 & 0.763
+...
+0.00174774 & 0.763
+...
+0.000451619 & 0.763
+...
+0.000116699 & 0.763
+...
+3.01552e-05 & 0.763
+...
+7.79213e-06 & 0.763
+...
+2.0135e-06 & 0.763
+...
+1.17184e-06 & 0.763
+\end{verbatim}
+\end{shaded}
+可以看出，Neumann边值条件时的V-cycle需做$27$-$48$次（随着$n$的增加逐渐增大），收敛速率在$0.60$-$0.76$左右，且随着$n$的增加收敛速度变慢，\textbf{收敛速度远慢于Dirichlet边值条件}。
+
+\textbf{误差无穷范数以及误差关于$n$的收敛速率}如下：
+\begin{shaded}
+\begin{verbatim}
+------------------errornorm report-------------------
+Errornorm of each n: 
+0.00124435, 0.000358919, 9.95615e-05, 2.64926e-05 
+Relative convergence rate(1og 2) between each n: 
+1.79366, 1.85187, 1.91651
+\end{verbatim} 
+\end{shaded}
+可以看出，V-cycle得到的误差无穷范数收敛阶随着$n$的增大趋向于$2$，从而验证了程序的正确性。
+
+$\bullet \;$ \textbf{FMG}:我们对$n=32,64,128,256$，首先记录每一次FMG后\textbf{residual的一范数（第一列）以及对应的reduction速率（第二列）}如下：
+\begin{shaded}
+\begin{verbatim}
+-------------------n = 32-------------------
+Iteration number: 10
+Residual's norm AND relative reduction rate between each cycle: 
+0.0771376
+0.0221719 & 0.287
+0.00637273 & 0.287
+0.00183167 & 0.287
+0.000526464 & 0.287
+0.000151318 & 0.287
+4.34922e-05 & 0.287
+1.25007e-05 & 0.287
+3.59298e-06 & 0.287
+1.0327e-06 & 0.287
+-------------------n = 64-------------------
+Iteration number: 12
+Residual's norm AND relative reduction rate between each cycle: 
+0.168099
+0.0560658 & 0.334
+0.0186985 & 0.334
+0.00623611 & 0.334
+0.0020798 & 0.334
+0.00069363 & 0.334
+0.000231332 & 0.334
+7.71511e-05 & 0.334
+2.57306e-05 & 0.334
+8.58137e-06 & 0.334
+2.86196e-06 & 0.334
+9.54489e-07 & 0.334
+-------------------n = 128-------------------
+Iteration number: 13
+Residual's norm AND relative reduction rate between each cycle: 
+0.341965
+0.127434 & 0.373
+0.0474885 & 0.373
+0.0176966 & 0.373
+0.00659464 & 0.373
+0.00245749 & 0.373
+0.000915785 & 0.373
+0.000341267 & 0.373
+0.000127173 & 0.373
+4.73911e-05 & 0.373
+1.76603e-05 & 0.373
+6.58111e-06 & 0.373
+2.45245e-06 & 0.373
+-------------------n = 256-------------------
+Iteration number: 14
+Residual's norm AND relative reduction rate between each cycle: 
+0.662484
+0.26867 & 0.406
+0.109 & 0.406
+0.0442211 & 0.406
+0.0179405 & 0.406
+0.00727843 & 0.406
+0.00295285 & 0.406
+0.00119797 & 0.406
+0.000486016 & 0.406
+0.000197176 & 0.406
+7.99942e-05 & 0.406
+3.24536e-05 & 0.406
+1.31664e-05 & 0.406
+5.3416e-06 & 0.406
+\end{verbatim}
+\end{shaded}
+可以看出，Neumann边值条件时的FMG仅需做$10$-$14$次，收敛速率稳定，在$0.29$到$0.41$左右，且随着$n$的增加收敛速度变慢，并且远好于V-cycle。
+
+\textbf{误差范数以及误差关于$n$的收敛速率}如下：
+\begin{shaded}
+\begin{verbatim}
+------------------errornorm report-------------------
+Errornorm of each n: 
+0.00124433, 0.000367063, 0.000104325, 2.80351e-05, 
+Relative convergence rate(1og 2) between each n: 
+1.76127, 1.81494, 1.89578
+\end{verbatim} 
+\end{shaded}
+可以看出，FMG得到的误差无穷范数收敛阶随着$n$的增大趋向于$2$，从而验证了程序的正确性。
+
+\subsubsection{Mixed边界条件}
+mixed边界条件中，我们测试函数$y=e^{-x+y}$，插值算子取linear，限制算子取full-weighting。
+
+$\bullet \;$ \textbf{V-cycle}:我们对$n=32,64,128,256$，首先记录每一次V-cycle后\textbf{residual的一范数（第一列）以及对应的reduction速率（第二列）}如下（需要注意的是，\textbf{由于二维纽曼收敛速度很慢，为了能在报告中不过于冗长地展示，我们仅在此处每五次迭代输出一次结果}）：
+\begin{shaded}
+\begin{verbatim}
+-------------------n = 32-------------------
+Iteration number: 10
+Residual's norm AND relative reduction rate between each cycle: 
+0.239373
+...
+2.8146e-05 & 0.163
+...
+1.99219e-08 & 0.163
+-------------------n = 64-------------------
+Iteration number: 16
+Residual's norm AND relative reduction rate between each cycle: 
+0.885872
+...
+0.00181624 & 0.296
+...
+4.04587e-06 & 0.294
+...
+8.92982e-09 & 0.294
+-------------------n = 128-------------------
+Iteration number: 25
+Residual's norm AND relative reduction rate between each cycle: 
+2.51434
+...
+0.0364773 & 0.451
+...
+0.000686045 & 0.451
+...
+1.27907e-05 & 0.451
+...
+2.37468e-07 & 0.45
+...
+9.77563e-09 & 0.45
+-------------------n = 256-------------------
+Iteration number: 43
+Residual's norm AND relative reduction rate between each cycle: 
+6.2299
+...
+0.243503 & 0.628
+...
+0.0243524 & 0.631
+...
+0.00242837 & 0.63
+...
+0.000241039 & 0.63
+...
+2.38789e-05 & 0.63
+...
+2.36382e-06 & 0.63
+...
+2.33933e-07 & 0.63
+...
+1.45749e-08 & 0.63
+\end{verbatim}
+\end{shaded}
+可以看出，Mixed边值条件时的V-cycle需做$10$-$43$次（随着$n$的增加逐渐增大），收敛速率稳定，在$0.16$-$0.63$左右，且随着$n$的增加收敛速度变慢，\textbf{收敛速度介于Dirichlet边值条件和Nuemann边值条件之间}。
+
+\textbf{误差无穷范数以及误差关于$n$的收敛速率}如下：
+\begin{shaded}
+\begin{verbatim}
+------------------errornorm report-------------------
+Errornorm of each n: 
+0.000224333, 5.66513e-05, 1.4238e-05, 3.56729e-06, 
+Relative convergence rate(1og 2) between each n: 
+1.98546, 1.99236, 1.99685
+\end{verbatim} 
+\end{shaded}
+可以看出，V-cycle得到的误差无穷范数收敛阶稳定在$2$左右，从而验证了程序的正确性。
+
+$\bullet \;$ \textbf{FMG}:我们对$n=32,64,128,256$，首先记录每一次FMG后\textbf{residual的一范数（第一列）以及对应的reduction速率（第二列）}如下：
+\begin{shaded}
+\begin{verbatim}
+-------------------n = 32-------------------
+Iteration number: 5
+Residual's norm AND relative reduction rate between each cycle: 
+0.00256978
+7.5638e-05 & 0.029
+2.2291e-06 & 0.029
+6.55775e-08 & 0.029
+1.92794e-09 & 0.029
+-------------------n = 64-------------------
+Iteration number: 5
+Residual's norm AND relative reduction rate between each cycle: 
+0.00822172
+0.000305826 & 0.037
+1.19364e-05 & 0.039
+4.72938e-07 & 0.04
+1.88134e-08 & 0.04
+-------------------n = 128-------------------
+Iteration number: 6
+Residual's norm AND relative reduction rate between each cycle: 
+0.0233875
+0.000933323 & 0.04
+4.12662e-05 & 0.044
+1.92316e-06 & 0.047
+9.20146e-08 & 0.048
+4.45966e-09 & 0.048
+-------------------n = 256-------------------
+Iteration number: 6
+Residual's norm AND relative reduction rate between each cycle: 
+0.0655845
+0.00265332 & 0.04
+0.000121939 & 0.046
+6.08068e-06 & 0.05
+3.19304e-07 & 0.053
+1.73105e-08 & 0.054
+\end{verbatim}
+\end{shaded}
+可以看出，Mixed边值条件时的FMG仅需做$5$至$6$次，收敛速率稳定且远好于V-cycle。
+
+\textbf{误差无穷范数以及误差关于$n$的收敛速率}如下：
+\begin{shaded}
+\begin{verbatim}
+------------------errornorm report-------------------
+Errornorm of each n: 
+0.00022433, 5.66526e-05, 1.42402e-05, 3.57187e-06 
+Relative convergence rate(1og 2) between each n: 
+1.98541, 1.99218, 1.99522
+\end{verbatim} 
+\end{shaded}
+可以看出，FMG得到的误差无穷范数收敛阶稳定在$2$左右，从而验证了程序的正确性。
+
+\subsubsection{程序运行时间比较}
+根据题目要求，我们还将比较二维的多重网格法（以$e^{y + \sin x}$为例）和第七章的LU分解（稀疏矩阵求解形式）的程序运行时间对比如下（单位：ms）：
+\begin{table}[H]
+\renewcommand{\arraystretch}{1.5}
+\caption{\textbf{CPU time}}
+\begin{center}
+\begin{tabular}{c|c@{\hspace{0.5cm}}c
+@{\hspace{0.5cm}}c|c@{\hspace{0.5cm}}c@{\hspace{0.5cm}}c|c@{\hspace{0.5cm}}c@{\hspace{0.5cm}}c|c@{\hspace{0.5cm}}c@{\hspace{0.5cm}}c}
+  \hline
+  \multirow{2}{*}{\textbf{boundary}$\backslash$ \textbf{n}} & \multicolumn{3}{c|}{32} & \multicolumn{3}{c|}{64} & \multicolumn{3}{c|}{128} & \multicolumn{3}{c}{256} \\
+  \cline{2-13}
+  & \textbf{V}&\textbf{FMG} & \textbf{LU} &\textbf{V}& \textbf{FMG} & \textbf{LU} &\textbf{V}& \textbf{FMG} & \textbf{LU} &\textbf{V}& \textbf{FMG} & \textbf{LU} \\
+  \hline
+  Dirichlet& 12&9 &31 &57 &32 &123 &234 &117 &525 &1229 &601 &2164 \\
+ 
+  Neumann &72 &46 &31 &296 &170 &122 &1306 &702 &526 &5602&2016 &2220 \\
+
+  Mixed &16 &15 &30 &79 &62 &126 &369 &290 &522 &1913 &1490 &2178 \\
+  \hline
+\end{tabular}
+\end{center}
+\end{table}
+
+从表中可以清晰地看出，FMG的效果总体要远好于LU分解，而除了Nuemann边值之外，V-cycle的效果也要整体好于LU分解。事实上，如果将$\nu_1$和$\nu_2$调小，运行时间将会更少，因此总体来说，V-cycle和FMG效果都要好于LU分解（但是LU分解的运行时间相对于边界条件较为稳定，这也是值得注意的地方）。
+\end{sloppypar}
+\end{document}
