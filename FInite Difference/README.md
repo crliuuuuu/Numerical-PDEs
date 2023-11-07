@@ -1,4 +1,4 @@
-# BVP Solver Project
+# Finite Difference Solver Project
 
 This project implements the solution of the Poisson's equation in two-dimensional heterogeneous regions using the finite difference method.
 

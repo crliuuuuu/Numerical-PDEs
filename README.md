@@ -6,9 +6,9 @@ This repository contains my personal implementation of some numerical PDEs-relat
 
 The repository covers the following projects:
 
-- Boundary Value Problems solver
 - Initial Value Problems solver
-- Multigrid Methods
+- Multigrid Methods solver
+- Finite Difference Methods solver
 
 
 ## Usage
