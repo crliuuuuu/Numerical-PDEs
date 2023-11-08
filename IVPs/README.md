@@ -10,7 +10,7 @@ In our formulation, we describe the position and velocity of the small body in a
 
 The motion of the small body is governed by the following system of first-order differential equations:
 
-```math
+```bash
 du1/dt = u4
 du2/dt = u5
 du3/dt = u6
