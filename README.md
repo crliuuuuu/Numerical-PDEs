@@ -1,6 +1,6 @@
 # Numerical PDEs
 
-This repository contains my personal implementation of some numerical PDEs-related projects using C++. Each project comes with its own set of reference tests and a Chinese test report.
+This repository contains my personal implementation of some numerical PDEs-related projects using C++. Each project comes with its own set of reference tests and a Chinese test report written in LaTeX.
 
 ## Contents
 
