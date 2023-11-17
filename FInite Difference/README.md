@@ -4,7 +4,7 @@ This project implements the solution of the Poisson's equation in two-dimensiona
 
 ## File Structure
 
-- `FD.h`: This header file defines classes `FD_regular` and `FD_irregular`. Class `FD_regular` implements the solution of the Poisson's equation in the two-dimensional region [0,1]\*[0,1] using the finite difference method. Class `FD_irregular` implements the solution of the Poisson's equation in the two-dimensional region obtained by removing any circle from the region [0,1]\*[0,1] using the finite difference method. Both classes support three types of boundary conditions: Dirichlet, Neumann, and mixed boundary conditions.
+- `FD.h`: This header file defines classes `FD_regular` and `FD_irregular`. Class `FD_regular` implements the solution of the Poisson's equation in the two-dimensional region [0,1]\*[0,1] using the finite difference method. Class `FD_irregular` implements the solution of the Poisson's equation in the two-dimensional region obtained by removing any circle from the region [0,1]\*[0,1] using the finite difference method. Both classes support three types of boundary conditions: Dirichlet, Neumann, and Mixed boundary conditions.
 - `test.cpp`: Test program. 
 - `test.json`: Input parameter files for the test program.
 
